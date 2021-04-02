@@ -3,6 +3,12 @@ uuid = "e2d33801-af7e-4b31-8442-e621f8a5f6bc"
 authors = ["Dan Hey <danielhey@outlook.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+
 [compat]
 julia = "1"
 
