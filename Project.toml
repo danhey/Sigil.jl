@@ -10,6 +10,7 @@ DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 
 [compat]
+Optim = "1.3"
 Dierckx = "0.5"
 julia = "1"
 
