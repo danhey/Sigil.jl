@@ -1,6 +1,10 @@
 using DifferentialEquations
 using Optim
 
+# for parsing Model S 
+using DataFrames
+using CSV
+
 function init_guess(M, X, Y)
     #=
     Gives a reasonable guess for Pc, Tc, R, and L for a star of mass M
@@ -97,40 +101,76 @@ function load2(M, Rs, Ls, X, Y; max_iterations=1000)
     return [Rs, Ls, Ps, Ts]
 end # load2
 
-function profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
+function profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf, filename)
     #=
     Integrates outward from m to mf and inward from M to mf to construct
     r, l, P, and T profiles from the given initial conditions.
     =#
+    
+    Xspl = nothing 
+    Yspl = nothing 
+    Kspl = nothing 
+    if filename != ""
+        model = DataFrame(CSV.File(filename)) 
+        Xspl = Spline1D(reverse(model.m), reverse(model.X))
+        Yspl = Spline1D(reverse(model.m), reverse(model.Y))
+        Kspl = Spline1D(reverse(model.m), reverse(model.kappa))
+    end 
+    
     yc = load1(m, Pc, Tc, X, Y)
-    prob = ODEProblem(deriv!,yc,(0, mf), (X, Y))
+    prob = ODEProblem(deriv!,yc,(0, mf), (X, Y, Xspl, Yspl, Kspl))
     sol_out = solve(prob, Tsit5());
     sol_out_v = hcat(sol_out.u...)'
 
     ys = load2(M, Rs, Ls, X, Y)
-    prob = ODEProblem(deriv!,ys,(M, mf), [X, Y])
+    prob = ODEProblem(deriv!,ys,(M, mf), (X, Y, Xspl, Yspl, Kspl))
     sol_in = solve(prob, Tsit5());
     sol_in_v = hcat(sol_in.u...)'
     return sol_out.t, sol_in.t, sol_out_v, sol_in_v
 end
 
 function profiles(star::Star, Rs, Ls, Pc, Tc; n=1000)
-    return profiles(star.m, star.M, Rs, Ls, Pc, Tc, star.X, star.Y, star.mf)
+    return profiles(star.m, star.M, Rs, Ls, Pc, Tc, star.X, star.Y, star.mf, star.filename)
 end
 
 function deriv!(du,u,p,m)
     r, l, P, T = u
-    X, Y = p
+    X, Y, Xspl, Yspl, Kspl = p
+    
+    if !isnothing(Xspl) && !isnothing(Yspl)
+        X = Xspl(m)
+        Y = Yspl(m)
+    end 
     
     mu = mu_from_composition(X, Y)
     rho = rho_ideal(P, T, mu)
     
-    kappa = opacity(logkappa_spl, rho, T)
+    #println("m:", m)
+    #println("r:", r)
+    #println("X:", X)
+    #println("Y:", Y)
+    #println("mu:", mu)
+    #println("rho:", rho)
+    #println("P:", P)
+    #println("T:", T)
+    #println("")
+    
+    if isnothing(Kspl)
+        kappa = opacity(logkappa_spl, rho, T)
+    else
+        kappa = Kspl(m)
+    end 
     
     du[1] = drdm(m, r, l, P, T, rho, mu)
     du[2] = dldm(m, r, l, P, T, rho, X, Y)
     du[3] = dPdm(m, r, l, P, T)
     du[4] = dTdm(m, r, l, P, T, mu, kappa)
+    
+    #println("drdm: ", du[1])
+    #println("dldm: ", du[2])
+    #println("dPdm: ", du[3])
+    #println("dTdm: ", du[4])
+    #println("")
 end
 
 function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)

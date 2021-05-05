@@ -14,12 +14,15 @@ mutable struct Star
     l::Array{AbstractFloat}
     P::Array{AbstractFloat}
     T::Array{AbstractFloat}
+    filename::String
 end
 
 Star(M) = Star(M, 0.01 * Msun, 0.8 * M, 0.7, 0.28,
-               zeros(1), zeros(1), zeros(1), zeros(1), zeros(1))
+               zeros(1), zeros(1), zeros(1), zeros(1), zeros(1), "")
 Star(M, X, Y) = Star(M, 0.01 * Msun, 0.8 * M, X, Y,
-                     zeros(1), zeros(1), zeros(1), zeros(1), zeros(1))  
+                     zeros(1), zeros(1), zeros(1), zeros(1), zeros(1), "") 
+Star(M, filename) = Star(M, 0.01 * Msun, 0.8 * M, 0.7, 0.28,
+                     zeros(1), zeros(1), zeros(1), zeros(1), zeros(1), filename) 
 
 export score,
     init_guess,
